@@ -21,6 +21,7 @@ public class DiscordBotApplication {
                 .thenAccept(slashCommands -> slashCommands.forEach(slashCommand ->
                         slashCommand.deleteForServer(server)))
                 .join();
+
 //
 //        SlashCommand ping = SlashCommand.with("ping", "Check the functionality of this command")
 //                .createForServer(server)
@@ -30,19 +31,30 @@ public class DiscordBotApplication {
 //                .createForServer(server)
 //                .join();
 
-        SlashCommand playMusic = SlashCommand.with("play", "play some music",
+        SlashCommand playMusic = SlashCommand.with("play", "plays some music",
                         List.of(SlashCommandOption.createWithOptions(SlashCommandOptionType.STRING, "link", "link to the video")))
                 .createForServer(server)
                 .join();
-        SlashCommand skipMusic = SlashCommand.with("skip", "play some music",
-                        List.of(SlashCommandOption.createWithOptions(SlashCommandOptionType.STRING, "link", "link to the video")))
+        SlashCommand pausePlayback = SlashCommand.with("pause", "stops playing music")
                 .createForServer(server)
                 .join();
-        Map<Long, SlashCommandCreateListener> getListener = Map.of(playMusic.getId(), new PlayMusicSlashCommandCreateListener(server, api));
+        SlashCommand continuePlayback = SlashCommand.with("resume", "continues playing tracks")
+                .createForServer(server)
+                .join();
+        SlashCommand skipTrack = SlashCommand.with("skip", "skips current track and goes to next")
+                .createForServer(server)
+                .join();
+        SlashCommand repeatPlayback = SlashCommand.with("repeat", "skips current track and goes to next")
+                .createForServer(server)
+                .join();
+        Map<Long, SlashCommandCreateListener> getListener = new HashMap<>(Map.of(playMusic.getId(), new PlayMusicSlashCommandCreateListener(server, api)));
+        getListener.put(pausePlayback.getId(), new PausePlaybackSlashCommandCreateListener());
+        getListener.put(continuePlayback.getId(), new ContinuePlaybackSlashCommandCreateListener());
+        getListener.put(skipTrack.getId(), new SkipTrackSlashCommandCreateListener());
 
         api.addSlashCommandCreateListener(event -> {
             System.out.println(event.getSlashCommandInteraction().getCommandId());
-            System.out.println(playMusic.getId());
+            //System.out.println(playMusic.getId());
            getListener.get(event.getSlashCommandInteraction().getCommandId()).onSlashCommandCreate(event);
         });
         //playMusic.getId();
