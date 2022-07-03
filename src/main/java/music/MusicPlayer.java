@@ -1,7 +1,8 @@
+package music;
+
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import org.javacord.api.entity.channel.ServerVoiceChannel;
 
 public class MusicPlayer {

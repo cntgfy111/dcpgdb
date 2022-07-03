@@ -1,3 +1,5 @@
+package music;
+
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.server.Server;
@@ -10,7 +12,7 @@ public class PlayMusicSlashCommandCreateListener implements SlashCommandCreateLi
     Server server;
     DiscordApi api;
 
-    PlayMusicSlashCommandCreateListener(Server server, DiscordApi api){
+    public PlayMusicSlashCommandCreateListener(Server server, DiscordApi api){
         this.server = server;
         this.api = api;
     }
@@ -33,7 +35,7 @@ public class PlayMusicSlashCommandCreateListener implements SlashCommandCreateLi
                     .respond();
         }
         if (MusicPlayer.currentMusicPlayer != null){
-            MusicPlayer.playerManager.loadItem(link, new AudioLoadHandlerAudioLoadResultHandler(interaction));
+            MusicPlayer.playerManager.loadItem(link, new AudioLoadResultHandlerImpl(interaction));
         } else{
             MusicPlayer.currentVoiceChannel.connect().thenAccept(audioConnection -> {
                 MusicPlayer.playerManager.registerSourceManager(new YoutubeAudioSourceManager());
@@ -42,7 +44,7 @@ public class PlayMusicSlashCommandCreateListener implements SlashCommandCreateLi
                 MusicPlayer.currentMusicPlayer.addListener(MusicPlayer.trackScheduler);
                 LavaPlayerAudioSource source = new LavaPlayerAudioSource(api, MusicPlayer.currentMusicPlayer);
                 audioConnection.setAudioSource(source);
-                MusicPlayer.playerManager.loadItem(link, new AudioLoadHandlerAudioLoadResultHandler(interaction));
+                MusicPlayer.playerManager.loadItem(link, new AudioLoadResultHandlerImpl(interaction));
             });
         }
 

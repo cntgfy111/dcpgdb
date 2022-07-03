@@ -1,5 +1,10 @@
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
+import music.ContinuePlaybackSlashCommandCreateListener;
+import music.PausePlaybackSlashCommandCreateListener;
+import music.PlayMusicSlashCommandCreateListener;
+import music.SkipTrackSlashCommandCreateListener;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.server.Server;
@@ -7,6 +12,7 @@ import org.javacord.api.interaction.SlashCommand;
 import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 import org.javacord.api.listener.interaction.SlashCommandCreateListener;
+import util.Result;
 
 public class DiscordBotApplication {
     public static void main(String[] args) {
@@ -17,22 +23,33 @@ public class DiscordBotApplication {
 
         Server server = new ArrayList<>(api.getServersByName("dcpgdb test")).get(0);
 
+        removeOldSlashCommands(api, server);
+        Map<Long, SlashCommandCreateListener> commands = initCommands(api, server);
+
+
+        api.addSlashCommandCreateListener(event -> {
+            System.out.println(event.getSlashCommandInteraction().getCommandId());
+            //System.out.println(playMusic.getId());
+            commands.get(event.getSlashCommandInteraction().getCommandId()).onSlashCommandCreate(event);
+        });
+        //playMusic.getId();
+        //ServerVoiceChannel voiceChannel = server.getVoiceChannels().stream().findAny().get();
+
+
+        System.out.println("Bot started");
+        System.out.println(api.createBotInvite());
+    }
+
+    private static void removeOldSlashCommands(DiscordApi api, Server server) {
         api.getServerSlashCommands(server)
-                .thenAccept(slashCommands -> slashCommands.forEach(slashCommand ->
-                        slashCommand.deleteForServer(server)))
+                .thenAccept(slashCommands -> slashCommands.forEach(slashCommand -> slashCommand.deleteForServer(server)))
                 .join();
+    }
 
-//
-//        SlashCommand ping = SlashCommand.with("ping", "Check the functionality of this command")
-//                .createForServer(server)
-//                .join();
-//
-//        SlashCommand notPing = SlashCommand.with("aping", "skodkopakdsopa")
-//                .createForServer(server)
-//                .join();
-
+    private static Map<Long, SlashCommandCreateListener> initCommands(DiscordApi api, Server server) {
         SlashCommand playMusic = SlashCommand.with("play", "plays some music",
-                        List.of(SlashCommandOption.createWithOptions(SlashCommandOptionType.STRING, "link", "link to the video")))
+                        List.of(SlashCommandOption.createWithOptions(SlashCommandOptionType.STRING, "link", "link to " +
+                                "the video")))
                 .createForServer(server)
                 .join();
         SlashCommand pausePlayback = SlashCommand.with("pause", "stops playing music")
@@ -47,22 +64,11 @@ public class DiscordBotApplication {
         SlashCommand repeatPlayback = SlashCommand.with("repeat", "skips current track and goes to next")
                 .createForServer(server)
                 .join();
-        Map<Long, SlashCommandCreateListener> getListener = new HashMap<>(Map.of(playMusic.getId(), new PlayMusicSlashCommandCreateListener(server, api)));
-        getListener.put(pausePlayback.getId(), new PausePlaybackSlashCommandCreateListener());
-        getListener.put(continuePlayback.getId(), new ContinuePlaybackSlashCommandCreateListener());
-        getListener.put(skipTrack.getId(), new SkipTrackSlashCommandCreateListener());
 
-        api.addSlashCommandCreateListener(event -> {
-            System.out.println(event.getSlashCommandInteraction().getCommandId());
-            //System.out.println(playMusic.getId());
-           getListener.get(event.getSlashCommandInteraction().getCommandId()).onSlashCommandCreate(event);
-        });
-        //playMusic.getId();
-        //ServerVoiceChannel voiceChannel = server.getVoiceChannels().stream().findAny().get();
-
-
-
-        System.out.println("Bot started");
-        System.out.println(api.createBotInvite());
+        return Map.of(
+                pausePlayback.getId(), new PausePlaybackSlashCommandCreateListener(),
+                continuePlayback.getId(), new ContinuePlaybackSlashCommandCreateListener(),
+                skipTrack.getId(), new SkipTrackSlashCommandCreateListener()
+        );
     }
 }
