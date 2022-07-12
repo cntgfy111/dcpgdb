@@ -28,7 +28,7 @@ public class SkipTrackSlashCommandCreateListener implements SlashCommandCreateLi
         }
         MusicPlayer.trackScheduler.nextTrack();
         interaction.createImmediateResponder()
-                .append("Трек пропущен")
+                .append("Трек попущен")
                 .respond();
     }
 }
