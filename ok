@@ -1,0 +1,265 @@
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mindex e6a5589..e731908 100644[m
+[1m--- a/.gitignore[m
+[1m+++ b/.gitignore[m
+[36m@@ -10,4 +10,3 @@[m [mgen/**[m
+ .gradle/[m
+ build/[m
+ bin/[m
+[31m-out/[m
+[1mdiff --git a/build.gradle b/build.gradle[m
+[1mindex 0d107e1..580e317 100644[m
+[1m--- a/build.gradle[m
+[1m+++ b/build.gradle[m
+[36m@@ -21,6 +21,12 @@[m [mrepositories {[m
+     }[m
+ }[m
+ [m
+[32m+[m[32mcompileJava.options.encoding = 'UTF-8'[m
+[32m+[m
+[32m+[m[32mtasks.withType(JavaCompile) {[m
+[32m+[m[32m    options.encoding = 'UTF-8'[m
+[32m+[m[32m}[m
+[32m+[m
+ dependencies {[m
+     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'[m
+     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'[m
+[1mdiff --git a/src/main/java/AudioLoadHandlerAudioLoadResultHandler.java b/src/main/java/AudioLoadHandlerAudioLoadResultHandler.java[m
+[1mindex fa38501..e0a271b 100644[m
+[1m--- a/src/main/java/AudioLoadHandlerAudioLoadResultHandler.java[m
+[1m+++ b/src/main/java/AudioLoadHandlerAudioLoadResultHandler.java[m
+[36m@@ -16,10 +16,14 @@[m [mpublic class AudioLoadHandlerAudioLoadResultHandler implements AudioLoadResultHa[m
+     public void trackLoaded(AudioTrack track) {[m
+         System.out.println("new track added");[m
+         MusicPlayer.trackScheduler.queue(track);[m
+[31m-[m
+[32m+[m[32m        if (MusicPlayer.currentMusicPlayer.getPlayingTrack() != track){[m
+[32m+[m[32m            interaction.createImmediateResponder()[m
+[32m+[m[32m                    .append("Добавил трек в очередь, братишка")[m
+[32m+[m[32m                    .respond();[m
+[32m+[m[32m        }[m
+ [m
+         interaction.createImmediateResponder()[m
+[31m-                .append("Добавил трек")[m
+[32m+[m[32m                .append("Играет трек жоский с длиной как мой фиг " + track.getDuration())[m
+                 .respond();[m
+     }[m
+ [m
+[1mdiff --git a/src/main/java/DiscordBotApplication.java b/src/main/java/DiscordBotApplication.java[m
+[1mindex faf866c..dcdef06 100644[m
+[1m--- a/src/main/java/DiscordBotApplication.java[m
+[1m+++ b/src/main/java/DiscordBotApplication.java[m
+[36m@@ -1,11 +1,22 @@[m
+[32m+[m[32mimport java.io.IOException;[m
+ import java.util.*;[m
+ [m
+[32m+[m[32mimport com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;[m
+[32m+[m[32mimport com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudDataReader;[m
+[32m+[m[32mimport com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudHtmlDataLoader;[m
+[32m+[m[32mimport com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudTrackFormat;[m
+[32m+[m[32mimport com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;[m
+[32m+[m[32mimport com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;[m
+[32m+[m[32mimport com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;[m
+[32m+[m[32mimport com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;[m
+ import org.javacord.api.DiscordApi;[m
+ import org.javacord.api.DiscordApiBuilder;[m
+ import org.javacord.api.entity.server.Server;[m
+[32m+[m[32mimport org.javacord.api.event.channel.server.voice.ServerVoiceChannelMemberLeaveEvent;[m
+ import org.javacord.api.interaction.SlashCommand;[m
+ import org.javacord.api.interaction.SlashCommandOption;[m
+ import org.javacord.api.interaction.SlashCommandOptionType;[m
+[32m+[m[32mimport org.javacord.api.listener.channel.server.voice.ServerVoiceChannelMemberLeaveListener;[m
+ import org.javacord.api.listener.interaction.SlashCommandCreateListener;[m
+ [m
+ public class DiscordBotApplication {[m
+[36m@@ -21,6 +32,83 @@[m [mpublic class DiscordBotApplication {[m
+                 .thenAccept(slashCommands -> slashCommands.forEach(slashCommand ->[m
+                         slashCommand.deleteForServer(server)))[m
+                 .join();[m
+[32m+[m[32m        api.addServerVoiceChannelMemberLeaveListener(new ServerVoiceChannelMemberLeaveListener() {[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public void onServerVoiceChannelMemberLeave(ServerVoiceChannelMemberLeaveEvent event) {[m
+[32m+[m[32m                System.out.println(event.getNewChannel().get());[m
+[32m+[m[32m                if (event.getUser() == api.getYourself()){[m
+[32m+[m[32m                    event.getNewChannel().get().connect().thenAccept(audioConnection -> {[m
+[32m+[m[32m                        MusicPlayer.trackScheduler.clearQueue();[m
+[32m+[m[32m                        MusicPlayer.trackScheduler.nextTrack();[m
+[32m+[m[32m                    });[m
+[32m+[m[32m                    System.out.println("бот вышел с канала ёптить");[m
+[32m+[m[32m                    MusicPlayer.currentVoiceChannel = api.getYourself().getConnectedVoiceChannel(server).get();[m
+[32m+[m[32m                    System.out.println(MusicPlayer.currentVoiceChannel);[m
+[32m+[m[32m                }[m
+[32m+[m
+[32m+[m[32m              //  System.out.println(MusicPlayer.currentVoiceChannel);[m
+[32m+[m[32m            }[m
+[32m+[m[32m        });[m
+[32m+[m[32m        SoundCloudDataReader soundCloudDataReader = new SoundCloudDataReader() {[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public JsonBrowser findTrackData(JsonBrowser rootData) {[m
+[32m+[m[32m                return null;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public String readTrackId(JsonBrowser trackData) {[m
+[32m+[m[32m                return null;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public boolean isTrackBlocked(JsonBrowser trackData) {[m
+[32m+[m[32m                return false;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public AudioTrackInfo readTrackInfo(JsonBrowser trackData, String identifier) {[m
+[32m+[m[32m                return null;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public List<SoundCloudTrackFormat> readTrackFormats(JsonBrowser trackData) {[m
+[32m+[m[32m                return null;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public JsonBrowser findPlaylistData(JsonBrowser rootData) {[m
+[32m+[m[32m                return null;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public String readPlaylistName(JsonBrowser playlistData) {[m
+[32m+[m[32m                return null;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public String readPlaylistIdentifier(JsonBrowser playlistData) {[m
+[32m+[m[32m                return null;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public List<JsonBrowser> readPlaylistTracks(JsonBrowser playlistData) {[m
+[32m+[m[32m                return null;[m
+[32m+[m[32m            }[m
+[32m+[m[32m        };[m
+[32m+[m[32m        SoundCloudHtmlDataLoader soundCloudHtmlDataLoader = new SoundCloudHtmlDataLoader() {[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public JsonBrowser load(HttpInterface httpInterface, String url) throws IOException {[m
+[32m+[m[32m                return null;[m
+[32m+[m[32m            }[m
+[32m+[m[32m        };[m
+[32m+[m
+[32m+[m[32m       // SoundCloudAudioSourceManager soundCloudAudioSourceManager = new SoundCloudAudioSourceManager();[m
+[32m+[m[32m        MusicPlayer.playerManager.registerSourceManager(new YoutubeAudioSourceManager());[m
+[32m+[m[32m     //   MusicPlayer.playerManager.registerSourceManager(soundCloudAudioSourceManager);[m
+[32m+[m[32m        MusicPlayer.currentMusicPlayer = MusicPlayer.playerManager.createPlayer();[m
+[32m+[m[32m        MusicPlayer.trackScheduler = new TrackScheduler(MusicPlayer.currentMusicPlayer);[m
+[32m+[m[32m        MusicPlayer.currentMusicPlayer.addListener(MusicPlayer.trackScheduler);[m
+[32m+[m[32m        MusicPlayer.source = new LavaPlayerAudioSource(api, MusicPlayer.currentMusicPlayer);[m
+ [m
+ //[m
+ //        SlashCommand ping = SlashCommand.with("ping", "Check the functionality of this command")[m
+[36m@@ -44,16 +132,16 @@[m [mpublic class DiscordBotApplication {[m
+         SlashCommand skipTrack = SlashCommand.with("skip", "skips current track and goes to next")[m
+                 .createForServer(server)[m
+                 .join();[m
+[31m-        SlashCommand repeatPlayback = SlashCommand.with("repeat", "skips current track and goes to next")[m
+[32m+[m[32m        /*SlashCommand repeatPlayback = SlashCommand.with("repeat", "skips current track and goes to next")[m
+                 .createForServer(server)[m
+[31m-                .join();[m
+[32m+[m[32m                .join();*/[m
+         Map<Long, SlashCommandCreateListener> getListener = new HashMap<>(Map.of(playMusic.getId(), new PlayMusicSlashCommandCreateListener(server, api)));[m
+         getListener.put(pausePlayback.getId(), new PausePlaybackSlashCommandCreateListener());[m
+         getListener.put(continuePlayback.getId(), new ContinuePlaybackSlashCommandCreateListener());[m
+         getListener.put(skipTrack.getId(), new SkipTrackSlashCommandCreateListener());[m
+ [m
+         api.addSlashCommandCreateListener(event -> {[m
+[31m-            System.out.println(event.getSlashCommandInteraction().getCommandId());[m
+[32m+[m[32m           // System.out.println(event.getSlashCommandInteraction().getCommandId());[m
+             //System.out.println(playMusic.getId());[m
+            getListener.get(event.getSlashCommandInteraction().getCommandId()).onSlashCommandCreate(event);[m
+         });[m
+[1mdiff --git a/src/main/java/MusicPlayer.java b/src/main/java/MusicPlayer.java[m
+[1mindex abc2e49..4c0ec5b 100644[m
+[1m--- a/src/main/java/MusicPlayer.java[m
+[1m+++ b/src/main/java/MusicPlayer.java[m
+[36m@@ -10,5 +10,6 @@[m [mpublic class MusicPlayer {[m
+     static AudioPlayer currentMusicPlayer;[m
+     static ServerVoiceChannel currentVoiceChannel;[m
+     static TrackScheduler trackScheduler;[m
+[32m+[m[32m    static LavaPlayerAudioSource source;[m
+ [m
+ }[m
+[1mdiff --git a/src/main/java/PlayMusicSlashCommandCreateListener.java b/src/main/java/PlayMusicSlashCommandCreateListener.java[m
+[1mindex 6e0f8a4..8025f6b 100644[m
+[1m--- a/src/main/java/PlayMusicSlashCommandCreateListener.java[m
+[1m+++ b/src/main/java/PlayMusicSlashCommandCreateListener.java[m
+[36m@@ -25,26 +25,29 @@[m [mpublic class PlayMusicSlashCommandCreateListener implements SlashCommandCreateLi[m
+         }[m
+         String link = interaction.getOptionStringValueByIndex(0).get();[m
+ [m
+[31m-        if (interaction.getUser().getConnectedVoiceChannel(server).isPresent()) {[m
+[31m-            MusicPlayer.currentVoiceChannel = interaction.getUser().getConnectedVoiceChannel(server).get();[m
+[31m-        } else {[m
+[32m+[m[32m        if (!interaction.getUser().getConnectedVoiceChannel(server).isPresent()) {[m
+             interaction.createImmediateResponder()[m
+                     .append("Зайди в войс, еблан")[m
+                     .respond();[m
+         }[m
+[31m-        if (MusicPlayer.currentMusicPlayer != null){[m
+[31m-            MusicPlayer.playerManager.loadItem(link, new AudioLoadHandlerAudioLoadResultHandler(interaction));[m
+[31m-        } else{[m
+[32m+[m
+[32m+[m[32m        if (MusicPlayer.currentVoiceChannel != null) {[m
+[32m+[m[32m            if (interaction.getUser().getConnectedVoiceChannel(server).get() != MusicPlayer.currentVoiceChannel) {[m
+[32m+[m[32m                interaction.createImmediateResponder()[m
+[32m+[m[32m                        .append("Ты не в том войсе, еблан")[m
+[32m+[m[32m                        .respond();[m
+[32m+[m[32m            }[m
+[32m+[m[32m        } else {[m
+[32m+[m[32m            MusicPlayer.currentVoiceChannel = interaction.getUser().getConnectedVoiceChannel(server).get();[m
+             MusicPlayer.currentVoiceChannel.connect().thenAccept(audioConnection -> {[m
+[31m-                MusicPlayer.playerManager.registerSourceManager(new YoutubeAudioSourceManager());[m
+[31m-                MusicPlayer.currentMusicPlayer = MusicPlayer.playerManager.createPlayer();[m
+[31m-                MusicPlayer.trackScheduler = new TrackScheduler(MusicPlayer.currentMusicPlayer);[m
+[31m-                MusicPlayer.currentMusicPlayer.addListener(MusicPlayer.trackScheduler);[m
+[31m-                LavaPlayerAudioSource source = new LavaPlayerAudioSource(api, MusicPlayer.currentMusicPlayer);[m
+[31m-                audioConnection.setAudioSource(source);[m
+[31m-                MusicPlayer.playerManager.loadItem(link, new AudioLoadHandlerAudioLoadResultHandler(interaction));[m
+[32m+[m[32m                audioConnection.setAudioSource(MusicPlayer.source);[m
+             });[m
+         }[m
+[32m+[m[32m        // if (MusicPlayer.currentMusicPlayer != null){[m
+[32m+[m[32m        MusicPlayer.playerManager.loadItem(link, new AudioLoadHandlerAudioLoadResultHandler(interaction));[m
+[32m+[m[32m        //} else{[m
+[32m+[m
+[32m+[m[32m       // }[m
+ [m
+     }[m
+ }[m
+[1mdiff --git a/src/main/java/TrackScheduler.java b/src/main/java/TrackScheduler.java[m
+[1mindex 599710f..c6d46bd 100644[m
+[1m--- a/src/main/java/TrackScheduler.java[m
+[1m+++ b/src/main/java/TrackScheduler.java[m
+[36m@@ -21,6 +21,10 @@[m [mpublic class TrackScheduler extends AudioEventAdapter {[m
+         this.queue = new LinkedBlockingQueue<>();[m
+     }[m
+ [m
+[32m+[m[32m    public void clearQueue(){[m
+[32m+[m[32m        queue.clear();[m
+[32m+[m[32m    }[m
+[32m+[m
+     /**[m
+      * Add the next track to queue or play right away if nothing is in the queue.[m
+      *[m
+[36m@@ -30,11 +34,12 @@[m [mpublic class TrackScheduler extends AudioEventAdapter {[m
+         // Calling startTrack with the noInterrupt set to true will start the track only if nothing is currently playing. If[m
+         // something is playing, it returns false and does nothing. In that case the player was already playing so this[m
+         // track goes to the queue instead.[m
+[31m-        System.out.println("new track is playing");[m
+         if (!player.startTrack(track, true)) {[m
+             System.out.println("track is in queue");[m
+             queue.offer(track);[m
+         }[m
+[32m+[m[32m        System.out.println("new track is playing");[m
+[32m+[m
+     }[m
+ [m
+     /**[m
