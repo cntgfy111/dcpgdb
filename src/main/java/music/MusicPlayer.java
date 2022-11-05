@@ -3,16 +3,30 @@ package music;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import org.javacord.api.entity.channel.ServerTextChannel;
-import org.javacord.api.entity.channel.ServerVoiceChannel;
-import org.javacord.api.entity.channel.TextChannel;
 
 public class MusicPlayer {
 
-    public static final AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-    public static AudioPlayer currentMusicPlayer;
-    public static ServerVoiceChannel currentVoiceChannel;
-    public static TextChannel currentTextChannel;
-    public static TrackScheduler trackScheduler;
+    private static final AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
+    private static AudioPlayer currentAudioPlayer;
+    private static TrackScheduler trackScheduler;
 
+    public static AudioPlayerManager getPlayerManager() {
+        return playerManager;
+    }
+
+    public static AudioPlayer getCurrentAudioPlayer() {
+        return currentAudioPlayer;
+    }
+
+    public static void setCurrentAudioPlayer(AudioPlayer currentAudioPlayer) {
+        MusicPlayer.currentAudioPlayer = currentAudioPlayer;
+    }
+
+    public static TrackScheduler getTrackScheduler() {
+        return trackScheduler;
+    }
+
+    public static void setTrackScheduler(TrackScheduler trackScheduler) {
+        MusicPlayer.trackScheduler = trackScheduler;
+    }
 }

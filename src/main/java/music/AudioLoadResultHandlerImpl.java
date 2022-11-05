@@ -11,7 +11,7 @@ public class AudioLoadResultHandlerImpl implements AudioLoadResultHandler {
     private final SlashCommandInteraction interaction;
     private final String link;
 
-    AudioLoadResultHandlerImpl(SlashCommandInteraction interaction, String link){
+    public AudioLoadResultHandlerImpl(SlashCommandInteraction interaction, String link){
         this.interaction = interaction;
         this.link = link;
     }
@@ -19,9 +19,10 @@ public class AudioLoadResultHandlerImpl implements AudioLoadResultHandler {
     @Override
     public void trackLoaded(AudioTrack track) {
         System.out.println("new track added");
-        MusicPlayer.trackScheduler.queue(track);
+        MusicPlayer.getTrackScheduler().queue(track);
+        System.out.println("ОТПРАВЛЯЮ СООБЩЕНИЕ");
         interaction.createFollowupMessageBuilder()
-                .setContent("добавил новый трек")
+                .append("добавил новый трек")
                 .send();
     }
 
@@ -29,17 +30,18 @@ public class AudioLoadResultHandlerImpl implements AudioLoadResultHandler {
     public void playlistLoaded(AudioPlaylist playlist) {
         if (playlist.isSearchResult()){
             System.out.println("find by query: " + playlist.getTracks().get(0).getInfo().title);
-            MusicPlayer.trackScheduler.queue(playlist.getTracks().get(0));
+            MusicPlayer.getTrackScheduler().queue(playlist.getTracks().get(0));
+            System.out.println("ОТПРАВЛЯЮ СООБЩЕНИЕ");
             interaction.createFollowupMessageBuilder()
-                    .setContent("добавил новый трек по запросу из ютуба")
+                    .append("добавил новый трек по запросу из ютуба")
                     .send();
         } else {
             for (AudioTrack track : playlist.getTracks()) {
                 System.out.println("new track added");
-                MusicPlayer.trackScheduler.queue(track);
+                MusicPlayer.getTrackScheduler().queue(track);
             }
             interaction.createFollowupMessageBuilder()
-                    .setContent("добавил треки из плейлиста")
+                    .append("добавил треки из плейлиста")
                     .send();
         }
     }
@@ -56,7 +58,7 @@ public class AudioLoadResultHandlerImpl implements AudioLoadResultHandler {
     public void loadFailed(FriendlyException exception) {
         System.out.println("Бляздец");
         System.out.println(exception.getMessage());
-        System.out.println(exception.getCause());
+        exception.printStackTrace();
         interaction.createFollowupMessageBuilder()
                 .setContent("Блинпец")
                 .send();
