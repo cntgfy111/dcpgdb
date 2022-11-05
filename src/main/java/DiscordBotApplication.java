@@ -1,10 +1,12 @@
 import java.util.*;
 
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEventListener;
 import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import music.*;
+import music.slashCommands.ContinuePlaybackSlashCommandCreateListener;
+import music.slashCommands.PausePlaybackSlashCommandCreateListener;
+import music.slashCommands.PlayMusicSlashCommandCreateListener;
+import music.slashCommands.SkipTrackSlashCommandCreateListener;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.server.Server;
@@ -12,7 +14,6 @@ import org.javacord.api.interaction.SlashCommand;
 import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 import org.javacord.api.listener.interaction.SlashCommandCreateListener;
-import util.Result;
 
 public class DiscordBotApplication {
     public static void main(String[] args) {
@@ -27,18 +28,15 @@ public class DiscordBotApplication {
         Map<Long, SlashCommandCreateListener> commands = initCommands(api, server);
 
         SoundCloudAudioSourceManager soundCloudAudioSourceManager = SoundCloudAudioSourceManager.createDefault();
-        MusicPlayer.playerManager.registerSourceManager(new YoutubeAudioSourceManager(true));
-        MusicPlayer.playerManager.registerSourceManager(soundCloudAudioSourceManager);
-        MusicPlayer.currentMusicPlayer = MusicPlayer.playerManager.createPlayer();
-        MusicPlayer.trackScheduler = new TrackScheduler(MusicPlayer.currentMusicPlayer);
-        MusicPlayer.currentMusicPlayer.addListener(MusicPlayer.trackScheduler);
-
+        MusicPlayer.getPlayerManager().registerSourceManager(new YoutubeAudioSourceManager(true));
+        MusicPlayer.getPlayerManager().registerSourceManager(soundCloudAudioSourceManager);
+        MusicPlayer.setCurrentAudioPlayer(MusicPlayer.getPlayerManager().createPlayer());
+        MusicPlayer.setTrackScheduler(new TrackScheduler(MusicPlayer.getCurrentAudioPlayer()));
+        MusicPlayer.getCurrentAudioPlayer().addListener(MusicPlayer.getTrackScheduler());
         api.addSlashCommandCreateListener(event -> {
             System.out.println(event.getSlashCommandInteraction().getCommandId());
             commands.get(event.getSlashCommandInteraction().getCommandId()).onSlashCommandCreate(event);
         });
-
-
         System.out.println("Bot started");
         System.out.println(api.createBotInvite());
     }
@@ -50,29 +48,29 @@ public class DiscordBotApplication {
     }
 
     private static Map<Long, SlashCommandCreateListener> initCommands(DiscordApi api, Server server) {
-        SlashCommand playMusic = SlashCommand.with("play", "plays some music",
-                        List.of(SlashCommandOption.createWithOptions(SlashCommandOptionType.STRING, "query", "link to " +
-                                "the video")))
+        SlashCommand playMusic = SlashCommand.with("play", "Повайбить",
+                        List.of(SlashCommandOption.createWithOptions(SlashCommandOptionType.STRING, "запрос", "ссылка или название")))
                 .createForServer(server)
                 .join();
-        SlashCommand pausePlayback = SlashCommand.with("pause", "stops playing music")
+        SlashCommand pausePlayback = SlashCommand.with("pause", "Остановить текущий вайб")
                 .createForServer(server)
                 .join();
-        SlashCommand continuePlayback = SlashCommand.with("resume", "continues playing tracks")
+        SlashCommand continuePlayback = SlashCommand.with("resume", "Продолжить вайб")
                 .createForServer(server)
                 .join();
-        SlashCommand skipTrack = SlashCommand.with("skip", "skips current track and goes to next")
+        SlashCommand skipTrack = SlashCommand.with("skip", "Использовать когда клементин врубает дабстеп")
                 .createForServer(server)
                 .join();
-        SlashCommand repeatPlayback = SlashCommand.with("repeat", "skips current track and goes to next")
+        //Я ОБЯЗАТЕЛЬНО СДЕЛАЮ КОМАНДУ РЕПИТ
+        /*SlashCommand repeatPlayback = SlashCommand.with("repeat", "Если трек качает, то это команда не подкачает")
                 .createForServer(server)
-                .join();
+                .join();*/
 
         return Map.of(
                 playMusic.getId(), new PlayMusicSlashCommandCreateListener(server, api),
-                pausePlayback.getId(), new PausePlaybackSlashCommandCreateListener(),
-                continuePlayback.getId(), new ContinuePlaybackSlashCommandCreateListener(),
-                skipTrack.getId(), new SkipTrackSlashCommandCreateListener()
+                pausePlayback.getId(), new PausePlaybackSlashCommandCreateListener(server),
+                continuePlayback.getId(), new ContinuePlaybackSlashCommandCreateListener(server),
+                skipTrack.getId(), new SkipTrackSlashCommandCreateListener(server)
         );
     }
 }

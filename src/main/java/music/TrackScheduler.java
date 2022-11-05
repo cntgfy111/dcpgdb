@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.javacord.api.entity.channel.TextChannel;
+import org.javacord.api.entity.channel.VoiceChannel;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 
@@ -26,6 +27,7 @@ public class TrackScheduler extends AudioEventAdapter {
     private final BlockingQueue<AudioTrack> queue;
     private final EmbedBuilder embed = new EmbedBuilder();
     private long MessageInfoID = 0;
+    private TextChannel channelForOutput;
 
     /**
      * @param player The audio player this scheduler uses
@@ -33,6 +35,10 @@ public class TrackScheduler extends AudioEventAdapter {
     public TrackScheduler(AudioPlayer player) {
         this.player = player;
         this.queue = new LinkedBlockingQueue<>();
+    }
+
+    public void setChannelForOutput(TextChannel channelForOutput) {
+        this.channelForOutput = channelForOutput;
     }
 
     /**
@@ -44,12 +50,18 @@ public class TrackScheduler extends AudioEventAdapter {
         // Calling startTrack with the noInterrupt set to true will start the track only if nothing is currently playing. If
         // something is playing, it returns false and does nothing. In that case the player was already playing so this
         // track goes to the queue instead.
-        if (!player.startTrack(track, true)) {
-            System.out.println("track is in queue");
-            queue.offer(track);
-            return;
+        try{
+            System.out.println("НАЧАЛО QUEUE");
+            if (!player.startTrack(track, true)) {
+                System.out.println("track is in queue");
+                queue.offer(track);
+                return;
+            }
+            System.out.println("new track is playing");
+        } catch (Exception e){
+            e.printStackTrace();
         }
-        System.out.println("new track is playing");
+
     }
 
     /**
@@ -59,10 +71,9 @@ public class TrackScheduler extends AudioEventAdapter {
         // Start the next track, regardless of if something is already playing or not. In case queue was empty, we are
         // giving null to startTrack, which is a valid argument and will simply stop the player.
         if (queue.isEmpty()){
-            MusicPlayer.currentTextChannel.sendMessage("queue закончилось ептить");
+            channelForOutput.sendMessage("queue закончилось ептить");
         }
         player.startTrack(queue.poll(), false);
-
     }
 
     @Override
@@ -76,7 +87,7 @@ public class TrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         // Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED)
-        MusicPlayer.currentTextChannel.deleteMessages(MessageInfoID);
+        channelForOutput.deleteMessages(MessageInfoID);
         if (endReason.mayStartNext) {
             nextTrack();
         }
@@ -91,7 +102,7 @@ public class TrackScheduler extends AudioEventAdapter {
                 .setUrl(trackInfo.uri)
                 .setColor(Color.RED);
         try {
-            MessageInfoID = MusicPlayer.currentTextChannel.sendMessage(embed).get().getId();
+            MessageInfoID = channelForOutput.sendMessage(embed).get().getId();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
